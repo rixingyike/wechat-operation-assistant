@@ -46,10 +46,5 @@
     "nodemon": "^2.0.7",
     "wechaty-puppet-mock": "^0.28.2",
     "wechaty-puppet-wechat4u": "^0.17.5"
-  },
-  "git": {
-    "scripts": {
-      "pre-push": "npx git-scripts-pre-push"
-    }
   }
 }
