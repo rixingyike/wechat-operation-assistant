@@ -4,15 +4,14 @@
   "description": "一个使用小微商户+微信聊天机器人构建的私域运营助手",
   "main": "index.js",
   "scripts": {
-    "serve": "WECHATY_NAME='wechat-operation-assistant' nodemon src/index.js",
-    "prod": "WECHATY_NAME='wechat-operation-assistant' node src/index.js"
+    "serve": "WECHATY_NAME='wechat-operation-assistant' nodemon src/index.js"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/rixingyike/wechat-operation-assistant.git"
   },
   "author": "LIYI <9830131@qq.com>",
-  "license": "ISC",
+  "license": "Apache License",
   "bugs": {
     "url": "https://github.com/rixingyike/wechat-operation-assistant/issues"
   },
