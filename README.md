@@ -17,7 +17,13 @@
 
 在使用之前需要Wechaty的token和小微商户的MCHID和SECRET。前者可在 https://qiwei.juzibot.com/corpPremium/wechaty 购买，是月租付费形式，更稿时每月200。后者在 https://pay.xunhuweb.com/ 申请，一次性付费。
 
-拿到启动材料后，需要在本地bash中配置一下系统变量。
+拿到启动材料后，需要在本地bash中配置一下系统变量：
+
+```
+export WEPAY_MCHID=xxx
+export WEPAY_SECRET=xxx
+export WECHATY_PUPPET_HOSTIE_TOKEN=xxx
+```
 
 ## 如何启动
 
