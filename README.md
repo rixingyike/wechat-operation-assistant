@@ -23,6 +23,7 @@
 
 ```
 git clone https://github.com/rixingyike/wechat-operation-assistant.git --depth=1
+cd wechat-operation-assistant
 npm i
 npm run serve
 ```
