@@ -346,7 +346,7 @@ async function payForGroup(msg, groupName) {
 
   let payResult = await new Promise((resolve, reject) => {
     // 检查支付订单状态
-    const MAX_CHECK_NUM = 2 // 30秒之内支付成功有效
+    const MAX_CHECK_NUM = 60 // 30秒之内支付成功有效
     let checkNum = 0
     const checkPayOrderFunc = async () => {
       let paySuccess = await queryPayOrder(out_trade_no, order_id, nonce_str)
