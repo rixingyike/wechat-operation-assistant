@@ -28,3 +28,5 @@ npm run serve
 ```
 
 有问题请关注微信公众号“程序员LIYI”联系作者。
+
+![](https://yishulun.com/post-images/1610260345230.jpg)
