@@ -37,3 +37,9 @@ npm run serve
 有问题请关注微信公众号“程序员LIYI”联系作者。
 
 ![](https://yishulun.com/post-images/1610260345230.jpg)
+
+## 版本
+
+v1.0：https://github.com/rixingyike/wechat-operation-assistant/releases/tag/v1.0
+
+作者为这个版本的使用录了一个视频：https://mp.weixin.qq.com/s/TUKmK7IgJElECt7hNq5QEA
