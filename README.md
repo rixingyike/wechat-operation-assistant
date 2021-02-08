@@ -1,3 +1,5 @@
+[![Powered by Wechaty](https://img.shields.io/badge/Powered%20By-Wechaty-brightgreen.svg)](https://wechaty.js.org)
+
 # wechat-operation-assistant
 一个使用小微商户+微信聊天机器人构建的私域运营助手
 
