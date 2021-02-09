@@ -369,13 +369,13 @@ async function payForGroup(msg, groupName) {
 
 async function queryPayOrder(out_trade_no, order_id, nonce_str) {
   let trade = {
-    out_trade_no, //
-    order_id, //以分为单位，货币的最小金额
-    nonce_str // 支付成功通知地址
+    out_trade_no, 
+    order_id, 
+    nonce_str 
   };
   trade.sign = wepay.getSign(trade)
   let resp = await axios.post('https://admin.xunhuweb.com/pay/query', trade)
-  log.info("resp", JSON.stringify(resp.data))
+  log.info("queryPayOrder.resp", JSON.stringify(resp.data))
   let success = resp.data.status == 'complete'
   return success
 }
