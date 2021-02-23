@@ -18,6 +18,8 @@
  *
  */
 const qrTerm = require('qrcode-terminal')
+
+// 引入wechaty模块
 const {
   config,
   Contact,
@@ -27,34 +29,40 @@ const {
   Friendship,
   log,
 } = require('wechaty')
+
 const util = require("./util")
 const wepay = require("./wepay")
 const axios = require('axios').default
 const short = require('short-uuid')
 const { FileBox } = require('file-box')
 
-// 没有用到，二维码是在线serve的，支付状态是靠查询得知最终状态的
+/// 开始实例化机器人
+const bot = new Wechaty({
+  name: 'wechat-operation-assistant',
+})
+
+// 没有正式做为图片服务用到，二维码是在线serve的，支付状态是靠查询得知最终状态的
 const LOCAL_SERVER = `http://rxyk.free.idcfengye.com`
+const TOTAL_FEE = 1 //1分钱
 
 /// 参数
 const data = util.readFile('./data.json') // json object
 log.info('data', JSON.stringify(data))
 
-/// 开始
-const bot = new Wechaty({
-  name: 'wechat-operation-assistant',
-})
-
+// 在终端里显示终端二维码
 bot.on("scan", function (qrcode, status) {
   if (status === ScanStatus.Waiting || status === ScanStatus.Timeout) {
     require('qrcode-terminal').generate(qrcode, { small: true })
+    let qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(qrcode)}&size=220x220&margin=20`
+    let c = require('child_process')
+    c.exec(`start ${qrCodeUrl}`)
   }
 })
   .on("login", function (user) {
-    log.info('StarterBot', '%s login', user)
+    log.info('%s login', user)
   })
   .on("logout", function (user) {
-    log.info('StarterBot', '%s logout', user)
+    log.info('%s logout', user)
   })
   .on("friendship", async (req) => {
     const contact = req.contact()
@@ -77,39 +85,58 @@ bot.on("scan", function (qrcode, status) {
       },
       3000,
     )
-
   })
   .on('message', async function (msg) {
-    if (msg.age() > 3 * 60) {
-      log.info('Bot', 'on(message) skip age("%d") > 3 * 60 seconds: "%s"', msg.age(), msg)
-      return
-    }
-
     const room = msg.room()
     const from = msg.talker()
     const text = msg.text()
+    console.log('msg', text)
 
-    if (!from) {
+    if (!from || msg.self()) {
       return
     }
 
-    console.log((room ? '[' + await room.topic() + ']' : '')
-      + '<' + from.name() + '>'
-      + ':' + msg,
-    )
-
-    if (msg.self()) {
-      return // skip self
+    // 
+    if (await from.name() == data.admin) {
+      if (/^更新$/i.test(text)) {
+        const admin = await bot.Contact.find({ name: "程序员LIYI" })
+        await admin.sync()
+        return
+      }
+      if (/^退出$/i.test(text)) {
+        await bot.logout()
+        return
+      }
     }
 
-    if (/^退出$/i.test(text)) {
-      if (from.name() == data.admin) {
-        await bot.logout()
+    // 踢出某人
+    if (room) {
+      // ok
+      let execKickUserRes = /^@(.*)? 勿发$/i.exec(text)
+      if (execKickUserRes) {
+        let toUserName = execKickUserRes[1]
+        // 只有机器人可以踢人
+        if (from.name() == data.admin) {
+          let toContact = await room.member({ name: new RegExp(`^${toUserName}$`, 'i') })
+          await room.del(toContact)
+          room.say(`已将${toContact.name()}移出`)
+        }
       }
       return
     }
 
-    // #查询${out_trade_no}
+    // 用户主动申请加群
+    let getWorkRes = /^申请加入([\u4E00-\u9FA5]{2,4})?群$/i.exec(text)
+    if (getWorkRes) {
+      let word = getWorkRes[1]//书法
+      let groupName = data.words[word]
+      if (groupName) {
+        dealWithGroup(from, groupName, msg)
+      }
+      return
+    }
+
+    // #查询 xxx
     // 用户主动查询支付过的订单
     let userQueryPayerRes = /^#查询(\d{4}\w+)?$/i.exec(text)
     if (userQueryPayerRes) {
@@ -121,46 +148,15 @@ bot.on("scan", function (qrcode, status) {
       }
       return
     }
-
-    // 用户主动申请加群
-    let getWorkRes = /^申请加入([\u4E00-\u9FA5]{2,4})?群$/i.exec(text)
-    log.info('getWorkRes', getWorkRes)
-    if (getWorkRes) {
-      let word = getWorkRes[1]//书法
-      let groupName = data.words[word]
-      log.info("word", word)
-      log.info("groupName", groupName)
-      if (groupName) {
-        dealWithGroup(from, groupName, msg)
-      }
-      return
-    }
-
-    if (room) {
-      // ok
-      let execKickUserRes = /^@(.*)? 勿发$/i.exec(text)
-      log.info('execKickUserRes', execKickUserRes)
-      if (execKickUserRes) {
-        let toUserName = execKickUserRes[1]
-        // 只有机器人可以踢人
-        if (from.name() == data.admin) {
-          let toContact = await room.member({ name: new RegExp(`^${toUserName}$`, 'i') })
-          // if (toContact) room.del(toContact)
-          getOutRoom(toContact, room)
-        }
-        return
-      }
-    }
+    // 
   })
-  .start()
-  .catch(e => console.error(e))
+// 启动
+bot.start().catch(err => console.error(err))
 
 // 处理用户想加入群的需求
 async function dealWithGroup(from, groupName, msg, requireCheckPayState = true) {
   const groupReg = new RegExp(`^${groupName}$`, 'i')
-  log.info("groupName", groupName)
   const dingRoom = await bot.Room.find({ topic: groupReg })
-  log.info("dingRoom", dingRoom)
   if (dingRoom) {
     if (await dingRoom.has(from)) {
       const topic = await dingRoom.topic()
@@ -178,56 +174,37 @@ async function dealWithGroup(from, groupName, msg, requireCheckPayState = true) 
   }
 }
 
+// 创建与管理群
 async function createAndManageRoom(from, groupName) {
   const groupReg = new RegExp(`^${groupName}$`, 'i')
-  const newRoom = await createRoom(from, groupName)
-  console.log('createRoom id:', newRoom.id)
+  await createRoom(from, groupName)
   await manageRoom(groupReg)
-}
-
-// 对新建群的管理
-async function manageRoom(groupReg) {
   const room = await bot.Room.find({ topic: groupReg })
   if (!room) {
-    log.warn('Bot', 'there is no room topic ding(yet)')
+    log.warn("没有找到群：", groupName)
     return
   }
   room.on('join', function (inviteeList, inviter) {
-    log.verbose('Bot', 'Room EVENT: join - "%s", "%s"',
-      inviteeList.map(c => c.name()).join(', '),
-      inviter.name(),
-    )
-    console.log('room.on(join) id:', this.id)
+    console.log('有人加入群，此群群ID:', this.id)
     checkRoomJoin.call(this, room, inviteeList, inviter)
   })
   room.on('leave', (leaverList, remover) => {
-    log.info('Bot', 'Room EVENT: leave - "%s" leave(remover "%s"), byebye', leaverList.join(','), remover || 'unknown')
+    log.info("有人离开群了")
   })
   room.on('topic', (topic, oldTopic, changer) => {
-    log.info('Bot', 'Room EVENT: topic - changed from "%s" to "%s" by member "%s"',
-      oldTopic,
-      topic,
-      changer.name(),
-    )
+    log.info("群名发生了更改")
   })
 }
 
-// 检查，只有机器人可以邀请
+// 检查，限制只有机器人可以邀请
 // 检查哪个群，把哪个群传递进来
 async function checkRoomJoin(room, inviteeList, inviter) {
-  log.info('Bot', 'checkRoomJoin("%s", "%s", "%s")',
-    await room.topic(),
-    inviteeList.map(c => c.name()).join(','),
-    inviter.name(),
-  )
-
   const userSelf = bot.userSelf()
-
   if (inviter.id !== userSelf.id) {
     await room.say('只允许私下拉人',
       inviter,
     )
-    await room.say('先将你移出群，如有需要，请加我微信',
+    await room.say('先将你移出群，如有需要，请加我微信进群',
       inviteeList,
     )
     setTimeout(
@@ -235,10 +212,11 @@ async function checkRoomJoin(room, inviteeList, inviter) {
       10 * 1000,
     )
   } else {
-    await room.say('欢迎~')
+    await room.say('欢迎新朋友~')
   }
 }
 
+// 邀请一人入群
 async function putInRoom(contact, room) {
   try {
     // 这个添加人可能出现错误，例如人数满员了
@@ -248,7 +226,7 @@ async function putInRoom(contact, room) {
       10 * 1000,
     )
   } catch (e) {
-    log.error('Bot', 'putInRoom() exception: ' + e.stack)
+    log.error('putInRoom.err' + e.stack)
     // 尝试检查群的人数,如果人数满了,建新群重拉
     let members = await room.memberAll()
     if (members.length >= 500) {
@@ -258,6 +236,7 @@ async function putInRoom(contact, room) {
   }
 }
 
+// 获取下一个可用的群名
 function getNextGroupName(groupName) {
   let r = groupName
   let res = /\w(\d)?$/i.exec(groupName)
@@ -270,18 +249,10 @@ function getNextGroupName(groupName) {
   return r
 }
 
-async function getOutRoom(contact, room) {
-  await room.del(contact)
-}
-
-function getHelperContact() {
-  return bot.Contact.find({ name: data.HELPER_CONTACT_NAME })
-}
-
 // 创建一个群
 async function createRoom(contact, groupName) {
   // 三个人开始建群
-  const helperContact = await getHelperContact()
+  const helperContact = await bot.Contact.find({ name: data.HELPER_CONTACT_NAME })
 
   if (!helperContact) {
     await contact.say(`没有这个朋友："${helperContact.name()}",或者TA违规了，需要换一个人协助建群`)
@@ -291,20 +262,21 @@ async function createRoom(contact, groupName) {
   const contactList = [contact, helperContact]
   const room = await bot.Room.create(contactList, groupName)
 
-  // 避免新建的群通过find找不到
+  // 避免新建的群通过find找不到，在这里调用sync方法
   await room.sync()
-  await room.topic(groupName)
+  // await room.topic(groupName)
   await room.say(`${groupName} - created`)
 
   return room
 }
 
-// 获取、必送支付二维码，验证支付行为，拉群
+
+// 让用户为进群做支付
 async function payForGroup(msg, groupName) {
   let outTradeNo = `${new Date().getFullYear()}${short().new()}`
   let trade = {
     out_trade_no: outTradeNo, //
-    total_fee: 1, //以分为单位，货币的最小金额
+    total_fee: TOTAL_FEE, //以分为单位，货币的最小金额
     body: "购买入群券", //最长127字节
     notify_url: `${LOCAL_SERVER}/pay_success_notify`, // 支付成功通知地址
     type: "wechat",
@@ -334,13 +306,17 @@ async function payForGroup(msg, groupName) {
   usersData[out_trade_no] = userDataObject
   util.writeFile('./user.json', usersData)
 
-  await msg.say("该群为付费群，扫码支付1分钱将自动拉你进群")
+  await msg.say(`该群为付费群，扫码支付 ${TOTAL_FEE} 分钱将自动拉你进群`)
   code_url = encodeURI(code_url)
-  // let imageUrl = `${LOCAL_SERVER}/qrcode/${code_url}`//使用本地服务
-  let imageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${code_url}`
-  log.info("imageUrl", imageUrl)
+  console.log('code_url', code_url);
+
+  // let imageUrl = `${LOCAL_SERVER}/qrcode/${code_url}`//使用本地服务，暂时不用
   // let qrCodeRes = await axios.get(targetUrl)
   // log.info("qrCodeRes",JSON.stringify( qrCodeRes.data))
+
+  let imageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=20&data=${code_url}`
+  log.info("支付二维码图片", imageUrl)
+  
   const fileBox = FileBox.fromUrl(imageUrl)
   await msg.say(fileBox)
 
@@ -351,12 +327,13 @@ async function payForGroup(msg, groupName) {
     const checkPayOrderFunc = async () => {
       let paySuccess = await queryPayOrder(out_trade_no, order_id, nonce_str)
       if (paySuccess) {
+        await msg.say(`支付成功，现拉你入群`)
         resolve(true)
       } else {
         if (checkNum++ < MAX_CHECK_NUM) {
           setTimeout(checkPayOrderFunc, 3000)
         } else {
-          log.info("检查停止，给用户一个主动查询的方法")
+          log.info("定时检查停止，给用户一个主动查询的方法")
           await msg.say(`3分钟内没有检查到支付成功，请稍后向我发送【#查询${out_trade_no}】进行自查询`)
           resolve(false)
         }
@@ -367,11 +344,12 @@ async function payForGroup(msg, groupName) {
   return payResult
 }
 
+// 查询历史支付订单状态
 async function queryPayOrder(out_trade_no, order_id, nonce_str) {
   let trade = {
-    out_trade_no, 
-    order_id, 
-    nonce_str 
+    out_trade_no,
+    order_id,
+    nonce_str
   };
   trade.sign = wepay.getSign(trade)
   let resp = await axios.post('https://admin.xunhuweb.com/pay/query', trade)
@@ -380,12 +358,12 @@ async function queryPayOrder(out_trade_no, order_id, nonce_str) {
   return success
 }
 
-// 用户主动检查超时订单的支付状态
+// 提供用户主动检查超时订单支付状态的方法
 async function userQueryOldOrder(msg, userDataObject) {
   let { out_trade_no, order_id, nonce_str, groupName } = userDataObject
   let paySuccess = await queryPayOrder(out_trade_no, order_id, nonce_str)
   if (paySuccess) {
-    msg.say("检查到已经支付成功了")
+    msg.say("检查到已经支付成功了，现在准备拉你入群")
     // 交给正常流程
     dealWithGroup(msg.from(), groupName, msg, false)
   } else {

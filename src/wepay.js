@@ -65,7 +65,7 @@ const getOrderParams = (trade) => {
   return paramsObject
 }
 
-// 
+// 退款
 const refund = async (order_id)=>{
   let order = {
     WEPAY_MCHID,

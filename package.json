@@ -4,7 +4,7 @@
   "description": "一个使用小微商户+微信聊天机器人构建的私域运营助手",
   "main": "index.js",
   "scripts": {
-    "serve": "WECHATY_NAME='wechat-operation-assistant' nodemon src/index.js"
+    "serve": "cross-env WECHATY_NAME='wechat-operation-assistant' nodemon src/index.js"
   },
   "repository": {
     "type": "git",
@@ -18,13 +18,17 @@
   "homepage": "https://github.com/rixingyike/wechat-operation-assistant#readme",
   "dependencies": {
     "axios": "^0.21.1",
+    "cheerio": "^1.0.0-rc.5",
+    "cross-env": "^7.0.3",
     "dotenv": "^8.2.0",
     "file-box": "^0.16.4",
     "hot-import": "^0.2.14",
+    "json-rpc-protocol": "^0.13.1",
     "jsonfile": "^6.1.0",
     "koa": "^2.13.1",
     "koa-bodyparser": "^3.2.0",
     "koa-router": "^10.0.0",
+    "mem": "^8.0.0",
     "qr-image": "^3.2.0",
     "qrcode-terminal": "^0.12.0",
     "raw-body": "^2.4.1",
