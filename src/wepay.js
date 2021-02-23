@@ -23,7 +23,7 @@ function checkSysVars(){
 
 const getSign = obj => {
   checkSysVars()
-  
+
   if (!obj.mchid) obj.mchid = WEPAY_MCHID
 
   let keys = Object.keys(obj)

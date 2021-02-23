@@ -299,7 +299,7 @@ async function createRoom(contact, groupName) {
   return room
 }
 
-// 获取支付二维码
+// 获取、必送支付二维码，验证支付行为，拉群
 async function payForGroup(msg, groupName) {
   let outTradeNo = `${new Date().getFullYear()}${short().new()}`
   let trade = {
