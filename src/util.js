@@ -1,8 +1,6 @@
 const jsonfile = require('jsonfile')
 const path = require('path')
 
-// const FILE = './data.json'
-
 function readFile(file){
   let res = jsonfile.readFileSync(path.resolve(`./${file}`))
   return res 

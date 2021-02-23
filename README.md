@@ -38,10 +38,10 @@
 ```bash
 export WEPAY_MCHID=xxx
 export WEPAY_SECRET=xxx
-export WECHATY_PUPPET_HOSTIE_TOKEN=xxx
+export WECHATY_PUPPET_SERVICE_TOKEN=xxx
 ```
 
-这是`Linux/Mac下`的配置，在`Windows`下需要自行修改一下配置方法。
+这是`Linux/Mac下`的配置，在`Windows`下需要自行修改一下配置方法。如果在Windows上安装了git-scm，配置方法与上面相同。
 
 ## 如何启动
 
