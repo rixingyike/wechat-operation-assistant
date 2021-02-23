@@ -178,7 +178,7 @@ async function dealWithGroup(from, groupName, msg, requireCheckPayState = true) 
 async function createAndManageRoom(from, groupName) {
   const groupReg = new RegExp(`^${groupName}$`, 'i')
   await createRoom(from, groupName)
-  await manageRoom(groupReg)
+  // await manageRoom(groupReg)
   const room = await bot.Room.find({ topic: groupReg })
   if (!room) {
     log.warn("没有找到群：", groupName)
