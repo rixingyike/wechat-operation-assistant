@@ -70,6 +70,24 @@ https://mp.weixin.qq.com/s/TUKmK7IgJElECt7hNq5QEA
 这里还有一个Youtube版本：
 https://youtu.be/Rujwzt0B9K8
 
-有问题请关注微信公众号“程序员LIYI”联系作者。
+有问题请扫码联系作者：
 
 ![](https://yishulun.com/post-images/1610260345230.jpg)
+
+## 常见问题
+
+**1. token与微信号是绑定的吗？**
+
+有读者问我一个问题：
+
+```
+《一个小小的机器人，帮我们自动拉人自动付费》
+Wechaty toten: https://qiwei.juzibot.com/corpPremium/wechaty
+WECHATY_PUPPET_HOSTIE_TOKEN=puppet_donut_***
+
+请教点：老师 句客宝=》通过企业微信登录之后 生成的token 是不是和自己的微信号绑定的(比如你提供的这个测试token 是否只有企业微信的登陆者 才能用)
+```
+
+不是绑定的，换一个微信也可以登录。
+Wechaty的token有两类：个人微信、企业微信。
+我在课程中使用的是个人微信token，目前这个token wechaty不同免费向贡献者提供，已经过期了。所以如果有读者想在源码中使用，需要自己购买个人微信token。购买链接就在上面。
